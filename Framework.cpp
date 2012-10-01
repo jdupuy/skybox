@@ -551,7 +551,7 @@ void tex_img_cube_map(const std::string filenames[6],
 	ypos.Pixels(), yneg.Pixels(),
 	zpos.Pixels(), zneg.Pixels() };
 	GLint align(0), swapBytes(0);
-	
+
 	GLenum pixelData = GL_UNSIGNED_BYTE;
 	glGetIntegerv(GL_UNPACK_ALIGNMENT, &align);
 	glGetIntegerv(GL_UNPACK_SWAP_BYTES, &swapBytes);
@@ -570,7 +570,7 @@ void tex_img_cube_map(const std::string filenames[6],
 		                0, 0,
 		                xpos.Width(), xpos.Height(),
 		                pixelFormat,
-		                GL_UNSIGNED_BYTE,
+		                pixelData,
 		                dataPtr[i]);
 	glPixelStorei(GL_UNPACK_ALIGNMENT,align);
 	glPixelStorei(GL_UNPACK_SWAP_BYTES,swapBytes);
@@ -639,10 +639,10 @@ void tex_img_sprites_image3D(const std::vector<std::string>& filenames,
 	for(GLint i=0; i<frameCnt; ++i)
 		glTexSubImage3D(GL_TEXTURE_3D,
 		                0,
-		                0, 0, frameCnt,
+		                0, 0, i,
 		                imgs[i].Width(), imgs[i].Height(), 1,
 		                pixelFormat,
-		                GL_UNSIGNED_BYTE,
+		                pixelData,
 		                imgs[i].Pixels());
 	glPixelStorei(GL_UNPACK_ALIGNMENT,align);
 	glPixelStorei(GL_UNPACK_SWAP_BYTES,swapBytes);
