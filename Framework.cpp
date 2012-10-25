@@ -70,6 +70,13 @@ public:
 	}
 };
 
+class _GLFramebufferStatusException : public FWException {
+public:
+	_GLFramebufferStatusException(const std::string& log) {
+		mMessage = log;
+	}
+};
+
 class _InvalidViewportDimensionsException : public FWException {
 public:
 	_InvalidViewportDimensionsException() {
@@ -243,6 +250,34 @@ static const std::string _gl_error_to_string(GLenum error) {
 		return "GL_INVALID_FRAMEBUFFER_OPERATION";
 	case GL_OUT_OF_MEMORY:
 		return "GL_OUT_OF_MEMORY";
+	default:
+		return "unknown code";
+	}
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Convert GL framebuffer status code to string
+static const std::string _gl_framebuffer_status_to_string(GLenum error) {
+	switch(error) {
+	case GL_FRAMEBUFFER_COMPLETE:
+		return "GL_FRAMEBUFFER_COMPLETE";
+	case GL_FRAMEBUFFER_UNDEFINED:
+		return "GL_FRAMEBUFFER_UNDEFINED";
+	case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+		return "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT";
+	case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+		return "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT";
+	case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
+		return "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER";
+	case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
+		return "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER";
+	case GL_FRAMEBUFFER_UNSUPPORTED:
+		return "GL_FRAMEBUFFER_UNSUPPORTED";
+	case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
+		return "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE";
+	case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:
+		return "GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS";
 	default:
 		return "unknown code";
 	}
@@ -782,6 +817,15 @@ GLvoid check_gl_error() throw (FWException) {
 		throw _GLErrorException(_gl_error_to_string(error));
 	}
 }
+
+GLvoid check_framebuffer_status() throw (FWException) {
+	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if(GL_FRAMEBUFFER_COMPLETE != status) {
+		throw _GLFramebufferStatusException(
+			_gl_framebuffer_status_to_string(status));
+	}
+}
+
 
 GLvoid init_debug_output(std::ostream& outputStream) throw (FWException) {
 	static bool isArbDebugOutputConfigured = false;
