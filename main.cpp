@@ -38,7 +38,9 @@ const float FOVY = PI*0.5f;
 
 enum {
 	// buffers
-	BUFFER_ONE = 0,
+	BUFFER1 = 0,
+	BUFFER2,
+	BUFFER3,
 	BUFFER_COUNT,
 
 	// vertex arrays
@@ -86,6 +88,7 @@ static void TW_CALL toggle_fullscreen(void *data) {
 }
 
 #endif
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // on init cb
