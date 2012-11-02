@@ -39,12 +39,10 @@ const float FOVY = PI*0.5f;
 enum {
 	// buffers
 	BUFFER1 = 0,
-	BUFFER2,
-	BUFFER3,
 	BUFFER_COUNT,
 
 	// vertex arrays
-	VERTEX_ARRAY_ONE = 0,
+	VERTEX_ARRAY_EMPTY = 0,
 	VERTEX_ARRAY_COUNT,
 
 	// samplers
@@ -52,12 +50,11 @@ enum {
 	SAMPLER_COUNT,
 
 	// textures
-	TEXTURE_ONE = 0,
-	TEXTURE_TWO,
+	TEXTURE_SKYBOX = 0,
 	TEXTURE_COUNT,
 
 	// programs
-	PROGRAM_ONE = 0,
+	PROGRAM_SKYBOX = 0,
 	PROGRAM_COUNT
 };
 
@@ -71,6 +68,9 @@ GLuint *programs     = NULL;
 bool mouseLeft  = false;
 bool mouseRight = false;
 GLfloat deltaTicks = 0.0f;
+GLfloat theta = 90.00f; // camera polar angle
+GLfloat phi   = 0; // camera azimuthal angle
+GLfloat radius     = 2;
 
 #ifdef _ANT_ENABLE
 GLfloat speed = 0.0f; // app speed (in ms)
@@ -109,6 +109,17 @@ void on_init() {
 	glGenSamplers(SAMPLER_COUNT, samplers);
 	for(GLuint i=0; i<PROGRAM_COUNT;++i)
 		programs[i] = glCreateProgram();
+
+	fw::build_glsl_program(programs[PROGRAM_SKYBOX],
+	                       "skybox.glsl",
+	                       "",
+	                       GL_TRUE);
+
+	glBindVertexArray(vertexArrays[VERTEX_ARRAY_EMPTY]);
+	glBindVertexArray(0);
+
+	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
 
 #ifdef _ANT_ENABLE
 	// start ant
@@ -181,17 +192,35 @@ void on_update() {
 	speed = deltaTicks*1000.0f;
 #endif
 
+	float thetaR = PI*0.5f-theta * PI / 180.0f;
+	float phiR   = phi   * PI / 180.0f;
+	Affine objectAxis;
+	objectAxis.RotateAboutWorldY(phiR);
+	objectAxis.RotateAboutWorldX(thetaR);
+	objectAxis.TranslateWorld(Vector3(0,0,-radius));
+	Matrix4x4 mvp = Matrix4x4::Perspective(FOVY,1,0.05f,1000.0f)
+	              * objectAxis.ExtractTransformMatrix();
+
+	glProgramUniformMatrix4fv(programs[PROGRAM_SKYBOX],
+		glGetUniformLocation(programs[PROGRAM_SKYBOX],
+		                     "uModelViewProjection"),
+		                      1,
+		                      GL_FALSE,
+		                      &mvp[0][0]);
+
 	// set viewport
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0,0,windowWidth, windowHeight);
 
-	// clear back buffer
-	glClear(GL_COLOR_BUFFER_BIT);
+	glUseProgram(programs[PROGRAM_SKYBOX]);
+	glBindVertexArray(vertexArrays[VERTEX_ARRAY_EMPTY]);
+		glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, 6);
 
 	// start ticking
 	deltaTimer.Start();
 
 #ifdef _ANT_ENABLE
-	TwDraw();
+//	TwDraw();
 #endif // _ANT_ENABLE
 
 	fw::check_gl_error();
@@ -245,6 +274,12 @@ void on_mouse_button(GLint button, GLint state, GLint x, GLint y) {
 		mouseLeft  &= button == GLUT_LEFT_BUTTON ? false : mouseLeft;
 		mouseRight  &= button == GLUT_RIGHT_BUTTON ? false : mouseRight;
 	}
+	if(button == 4) {
+		radius += 0.5f;
+	}
+	if(button == 3) {
+		radius = std::max(0.5f, radius-0.5f);
+	}
 }
 
 
@@ -252,8 +287,7 @@ void on_mouse_button(GLint button, GLint state, GLint x, GLint y) {
 // on mouse motion cb
 void on_mouse_motion(GLint x, GLint y) {
 #ifdef _ANT_ENABLE
-	if(1 == TwEventMouseMotionGLUT(x,y))
-		return;
+	TwEventMouseMotionGLUT(x,y);
 #endif // _ANT_ENABLE
 
 	static GLint sMousePreviousX = 0;
@@ -262,6 +296,11 @@ void on_mouse_motion(GLint x, GLint y) {
 	const GLint MOUSE_YREL = y-sMousePreviousY;
 	sMousePreviousX = x;
 	sMousePreviousY = y;
+
+	if(mouseLeft) {
+		phi   = fmod(phi+deltaTicks*MOUSE_XREL*400.0f, 360.0f);
+		theta = std::min(std::max(0.001f,theta+deltaTicks*MOUSE_YREL*400.0f), 179.999f);
+	}
 }
 
 
