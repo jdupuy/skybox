@@ -21,13 +21,19 @@ void main() {
 	                 gl_InstanceID);
 
 	// position
-	int halfId = (gl_InstanceID >> 1) % 2; // mod 2 inverts x and z
-	float s    = (gl_InstanceID & 1)*2.0-1.0;
-	vec3 pos = vec3(oTexCoord.st*2.0-1.0, 1).xzy;
-	pos[0] = s*pos[halfId & 2];
-	pos[1] = s*pos[1 << (halfId & 1)];
-	pos[2] = s*pos[2 >> halfId & 2];
-	gl_Position = uModelViewProjection * vec4(pos,1);
+	int halfId = 5 - gl_InstanceID >> 1; // substraction inverts x and z
+//	float s    = (gl_InstanceID & 1)*2.0-1.0;
+	float sx = (gl_InstanceID & 3) > 0 ? 1 : -1;
+	float sy = gl_InstanceID == 2 ? -1 : 1;
+	float sz = (gl_InstanceID==1 || 
+	            gl_InstanceID==3 || 
+	            gl_InstanceID==4) ? -1 : 1;
+	vec3 pos = vec3(oTexCoord.st*2.0-1.0, -1);
+	vec3 k; // "normal"
+	k[0] = sx*pos[halfId & 2];
+	k[1] = sy*pos[1 << (halfId & 1)];
+	k[2] = sz*pos[2 >> halfId];
+	gl_Position = uModelViewProjection * vec4(k,1);
 }
 #endif
 
@@ -41,7 +47,8 @@ layout(location=0) out vec4 oColour;
 
 void main() {
 	oColour = texture(uEnvironment, iTexCoord);
-	oColour.rg = iTexCoord.st;
+//	oColour.rg = iTexCoord.st;
+	oColour.b  = iTexCoord.p/6.0;
 }
 #endif
 
