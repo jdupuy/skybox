@@ -4,8 +4,13 @@
 // --------------------------------------------------
 // Uniforms
 // --------------------------------------------------
-uniform samplerCube uEnvironment;
+uniform samplerCube sSky;
 uniform mat4 uModelViewProjection;
+
+
+// --------------------------------------------------
+// Callbacks
+// --------------------------------------------------
 
 
 // --------------------------------------------------
@@ -15,25 +20,18 @@ uniform mat4 uModelViewProjection;
 layout(location=0) out vec3 oTexCoord;
 
 void main() {
-	// texture coordinates
-	oTexCoord = vec3(gl_VertexID & 1,
-	                 gl_VertexID >> 1 & 1,
-	                 gl_InstanceID);
+	// extract vertices
+	int r = int(gl_VertexID > 6);
+	int i = r==1 ? 13-gl_VertexID : gl_VertexID;
+	int x = int(i<3 || i==4);
+	int y = r ^ int(i>0 && i<4);
+	int z = r ^ int(i<2 || i>5);
 
-	// position
-	int halfId = 5 - gl_InstanceID >> 1; // substraction inverts x and z
-//	float s    = (gl_InstanceID & 1)*2.0-1.0;
-	float sx = (gl_InstanceID & 3) > 0 ? 1 : -1;
-	float sy = gl_InstanceID == 2 ? -1 : 1;
-	float sz = (gl_InstanceID==1 || 
-	            gl_InstanceID==3 || 
-	            gl_InstanceID==4) ? -1 : 1;
-	vec3 pos = vec3(oTexCoord.st*2.0-1.0, -1);
-	vec3 k; // "normal"
-	k[0] = sx*pos[halfId & 2];
-	k[1] = sy*pos[1 << (halfId & 1)];
-	k[2] = sz*pos[2 >> halfId];
-	gl_Position = uModelViewProjection * vec4(k,1);
+	// extract position
+	const float SKY_SIZE = 200.0;
+	oTexCoord = vec3(x,y,z)*2.0-1.0;
+	gl_Position = uModelViewProjection *
+	              vec4(oTexCoord*SKY_SIZE,1);
 }
 #endif
 
@@ -46,9 +44,7 @@ layout(location=0) in vec3 iTexCoord;
 layout(location=0) out vec4 oColour;
 
 void main() {
-	oColour = texture(uEnvironment, iTexCoord);
-//	oColour.rg = iTexCoord.st;
-	oColour.b  = iTexCoord.p/6.0;
+	oColour = texture(sSky, normalize(iTexCoord));
 }
 #endif
 

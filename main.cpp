@@ -35,6 +35,12 @@
 // Constants
 const float PI   = 3.14159265;
 const float FOVY = PI*0.5f;
+const std::string cubemaps[6] = {"interstellar_ft.tga",
+                                 "interstellar_bk.tga",
+                                 "interstellar_up.tga",
+                                 "interstellar_dn.tga",
+                                 "interstellar_rt.tga",
+                                 "interstellar_lf.tga"};
 
 enum {
 	// buffers
@@ -110,16 +116,33 @@ void on_init() {
 	for(GLuint i=0; i<PROGRAM_COUNT;++i)
 		programs[i] = glCreateProgram();
 
+	glActiveTexture(GL_TEXTURE0+TEXTURE_SKYBOX);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textures[TEXTURE_SKYBOX]);
+		fw::tex_tga_cube_map(cubemaps, GL_TRUE, GL_FALSE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP,
+		                GL_TEXTURE_MIN_FILTER,
+		                GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glBindVertexArray(vertexArrays[VERTEX_ARRAY_EMPTY]);
+	glBindVertexArray(0);
+
+
 	fw::build_glsl_program(programs[PROGRAM_SKYBOX],
 	                       "skybox.glsl",
 	                       "",
 	                       GL_TRUE);
 
-	glBindVertexArray(vertexArrays[VERTEX_ARRAY_EMPTY]);
-	glBindVertexArray(0);
+	glProgramUniform1i(programs[PROGRAM_SKYBOX],
+	                   glGetUniformLocation(programs[PROGRAM_SKYBOX],
+	                                        "sSky"),
+	                   TEXTURE_SKYBOX);
+
+	glClearColor(0.1,0.1,0.1,1);
 
 	glEnable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
+	glEnable(GL_CULL_FACE);
 
 #ifdef _ANT_ENABLE
 	// start ant
@@ -184,6 +207,7 @@ void on_update() {
 	static fw::Timer deltaTimer;
 	GLint windowWidth  = glutGet(GLUT_WINDOW_WIDTH);
 	GLint windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
+	GLfloat aspect = GLfloat(windowWidth)/GLfloat(windowHeight);
 
 	// stop timing and set delta
 	deltaTimer.Stop();
@@ -192,13 +216,13 @@ void on_update() {
 	speed = deltaTicks*1000.0f;
 #endif
 
-	float thetaR = PI*0.5f-theta * PI / 180.0f;
+	float thetaR = PI*0.5f - theta * PI / 180.0f;
 	float phiR   = phi   * PI / 180.0f;
 	Affine objectAxis;
 	objectAxis.RotateAboutWorldY(phiR);
 	objectAxis.RotateAboutWorldX(thetaR);
 	objectAxis.TranslateWorld(Vector3(0,0,-radius));
-	Matrix4x4 mvp = Matrix4x4::Perspective(FOVY,1,0.05f,1000.0f)
+	Matrix4x4 mvp = Matrix4x4::Perspective(FOVY,aspect*0.5f,0.05f,1000.0f)
 	              * objectAxis.ExtractTransformMatrix();
 
 	glProgramUniformMatrix4fv(programs[PROGRAM_SKYBOX],
@@ -212,9 +236,9 @@ void on_update() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0,0,windowWidth, windowHeight);
 
-	glUseProgram(programs[PROGRAM_SKYBOX]);
 	glBindVertexArray(vertexArrays[VERTEX_ARRAY_EMPTY]);
-		glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, 6);
+	glUseProgram(programs[PROGRAM_SKYBOX]);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 14);
 
 	// start ticking
 	deltaTimer.Start();
@@ -299,7 +323,7 @@ void on_mouse_motion(GLint x, GLint y) {
 
 	if(mouseLeft) {
 		phi   = fmod(phi+deltaTicks*MOUSE_XREL*400.0f, 360.0f);
-		theta = std::min(std::max(0.001f,theta+deltaTicks*MOUSE_YREL*400.0f), 179.999f);
+		theta = std::min(std::max(0.001f,theta-deltaTicks*MOUSE_YREL*400.0f), 179.999f);
 	}
 }
 
