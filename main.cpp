@@ -35,12 +35,12 @@
 // Constants
 const float PI   = 3.14159265;
 const float FOVY = PI*0.5f;
-const std::string cubemaps[6] = {"interstellar_ft.tga",
-                                 "interstellar_bk.tga",
-                                 "interstellar_up.tga",
-                                 "interstellar_dn.tga",
-                                 "interstellar_rt.tga",
-                                 "interstellar_lf.tga"};
+const std::string cubemaps[6] = {"stormydays_ft.tga",
+                                 "stormydays_bk.tga",
+                                 "stormydays_up.tga",
+                                 "stormydays_dn.tga",
+                                 "stormydays_rt.tga",
+                                 "stormydays_lf.tga"};
 
 enum {
 	// buffers
