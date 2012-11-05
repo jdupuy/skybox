@@ -569,7 +569,7 @@ void tex_img_cube_map(const std::string filenames[6],
 		               xpos.Height());
 	else {
 		for(GLint i=0; i<6; ++i)
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X+i,
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X+i,
 			             0,
 			             internalFormat,
 			             xpos.Width(),
